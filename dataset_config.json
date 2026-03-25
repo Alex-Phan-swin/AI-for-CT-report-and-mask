@@ -1,0 +1,18 @@
+{
+  "dataset_name": "AbdomenAtlas3.0Mini",
+  "total_samples": 18524,
+  "splits": {
+    "train": {
+      "samples": 13032,
+      "features": [
+        "BDMAP ID"
+      ]
+    },
+    "test": {
+      "samples": 5492,
+      "features": [
+        "BDMAP ID"
+      ]
+    }
+  }
+}

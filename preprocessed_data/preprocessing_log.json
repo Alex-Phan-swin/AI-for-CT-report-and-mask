@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-03-25 23:34:15.265308",
+  "techniques_applied": [
+    "resize",
+    "normalize",
+    "histogram_eq",
+    "clahe",
+    "bilateral",
+    "morphological"
+  ],
+  "statistics": {
+    "total_images_processed": 0,
+    "output_format": "float32",
+    "output_size": "256x256",
+    "techniques_count": 12
+  }
+}
