@@ -14,7 +14,10 @@ class LiverDataset(Dataset):
         self.transform = transform
 
         # class folders (IMPORTANT: sorted for consistency)
-        self.classes = sorted(os.listdir(root_dir))  
+        self.classes = sorted([
+            d for d in os.listdir(root_dir)
+            if os.path.isdir(os.path.join(root_dir, d))
+        ])
         # e.g. ['Unhealthy', 'healthy']
 
         self.image_paths = []
