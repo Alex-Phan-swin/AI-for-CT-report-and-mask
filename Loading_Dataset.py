@@ -23,6 +23,7 @@ class LiverDataset(Dataset):
         self.image_paths = []
         self.labels = []
 
+        #Assign numeric labels based on folder names, e.g. 'Unhealthy' -> 0, 'healthy' -> 1
         for label, cls in enumerate(self.classes):
             class_path = os.path.join(root_dir, cls)
 
@@ -36,6 +37,7 @@ class LiverDataset(Dataset):
     def __len__(self):
         return len(self.image_paths)
 
+    #Load image and label, apply transforms if any
     def __getitem__(self, idx):
         img = Image.open(self.image_paths[idx]).convert("RGB")
         label = self.labels[idx]
