@@ -1,0 +1,137 @@
+from pathlib import Path
+import os
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from PIL import Image
+import torchvision.transforms as transforms
+import torchvision.models as models
+
+# -----------------------------
+# Paths
+# -----------------------------
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+DATASET_DIR = PROJECT_ROOT / "dataset"
+MODELS_DIR = PROJECT_ROOT / "models"
+MODEL_PATH = MODELS_DIR / "liver_model.pth"
+
+# -----------------------------
+# Dataset class
+# -----------------------------
+class LiverDataset(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = Path(root_dir)
+        self.transform = transform
+
+        self.classes = sorted([
+            d.name for d in self.root_dir.iterdir()
+            if d.is_dir()
+        ])
+
+        self.image_paths = []
+        self.labels = []
+
+        for label, cls in enumerate(self.classes):
+            class_path = self.root_dir / cls
+
+            for img_name in os.listdir(class_path):
+                img_path = class_path / img_name
+
+                if img_name.lower().endswith((".png", ".jpg", ".jpeg")):
+                    self.image_paths.append(img_path)
+                    self.labels.append(label)
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        img = Image.open(self.image_paths[idx]).convert("RGB")
+        label = self.labels[idx]
+
+        if self.transform:
+            img = self.transform(img)
+
+        return img, label
+
+# -----------------------------
+# Device
+# -----------------------------
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+print("Dataset location:", DATASET_DIR)
+
+# -----------------------------
+# Transforms
+# -----------------------------
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])
+
+# -----------------------------
+# Load dataset
+# -----------------------------
+dataset = LiverDataset(root_dir=DATASET_DIR, transform=transform)
+
+print("Classes:", dataset.classes)
+print("Total images:", len(dataset))
+
+if len(dataset.classes) < 2:
+    print("Error: need at least 2 classes in dataset/")
+    raise SystemExit(1)
+
+# -----------------------------
+# DataLoader
+# -----------------------------
+train_loader = DataLoader(dataset, batch_size=16, shuffle=True)
+
+# -----------------------------
+# Model
+# -----------------------------
+model = models.resnet18(weights=None)
+num_features = model.fc.in_features
+model.fc = nn.Linear(num_features, len(dataset.classes))
+model = model.to(device)
+
+# -----------------------------
+# Loss and optimizer
+# -----------------------------
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+# -----------------------------
+# Training
+# -----------------------------
+num_epochs = 3
+
+for epoch in range(num_epochs):
+    model.train()
+    running_loss = 0.0
+
+    for images, labels in train_loader:
+        images = images.to(device)
+        labels = labels.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+
+    print(f"Epoch {epoch + 1}, Loss: {running_loss:.4f}")
+
+# -----------------------------
+# Save model
+# -----------------------------
+MODELS_DIR.mkdir(exist_ok=True)
+
+torch.save({
+    "model_state_dict": model.state_dict(),
+    "class_names": dataset.classes
+}, MODEL_PATH)
+
+print(f"Model saved as {MODEL_PATH}")
