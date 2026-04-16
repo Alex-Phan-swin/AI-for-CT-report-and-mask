@@ -23,44 +23,6 @@ DATASET_DIR = PROJECT_ROOT / "dataset"
 MODELS_DIR = PROJECT_ROOT / "models"
 MODEL_PATH = MODELS_DIR / "liver_model.pth"
 
-# # -----------------------------
-# # Dataset class
-# # -----------------------------
-# class LiverDataset(Dataset):
-#     def __init__(self, root_dir, transform=None):
-#         self.root_dir = Path(root_dir)
-#         self.transform = transform
-
-#         self.classes = sorted([
-#             d.name for d in self.root_dir.iterdir()
-#             if d.is_dir()
-#         ])
-
-#         self.image_paths = []
-#         self.labels = []
-
-#         for label, cls in enumerate(self.classes):
-#             class_path = self.root_dir / cls
-
-#             for img_name in os.listdir(class_path):
-#                 img_path = class_path / img_name
-
-#                 if img_name.lower().endswith((".png", ".jpg", ".jpeg")):
-#                     self.image_paths.append(img_path)
-#                     self.labels.append(label)
-
-#     def __len__(self):
-#         return len(self.image_paths)
-
-#     def __getitem__(self, idx):
-#         img = Image.open(self.image_paths[idx]).convert("RGB")
-#         label = self.labels[idx]
-
-#         if self.transform:
-#             img = self.transform(img)
-
-#         return img, label
-
 # -----------------------------
 # Device
 # -----------------------------
