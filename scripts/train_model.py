@@ -9,6 +9,7 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from Loading_Dataset import LiverDataset
 from sklearn.metrics import precision_score, recall_score, f1_score
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -22,43 +23,43 @@ DATASET_DIR = PROJECT_ROOT / "dataset"
 MODELS_DIR = PROJECT_ROOT / "models"
 MODEL_PATH = MODELS_DIR / "liver_model.pth"
 
-# -----------------------------
-# Dataset class
-# -----------------------------
-class LiverDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
-        self.root_dir = Path(root_dir)
-        self.transform = transform
+# # -----------------------------
+# # Dataset class
+# # -----------------------------
+# class LiverDataset(Dataset):
+#     def __init__(self, root_dir, transform=None):
+#         self.root_dir = Path(root_dir)
+#         self.transform = transform
 
-        self.classes = sorted([
-            d.name for d in self.root_dir.iterdir()
-            if d.is_dir()
-        ])
+#         self.classes = sorted([
+#             d.name for d in self.root_dir.iterdir()
+#             if d.is_dir()
+#         ])
 
-        self.image_paths = []
-        self.labels = []
+#         self.image_paths = []
+#         self.labels = []
 
-        for label, cls in enumerate(self.classes):
-            class_path = self.root_dir / cls
+#         for label, cls in enumerate(self.classes):
+#             class_path = self.root_dir / cls
 
-            for img_name in os.listdir(class_path):
-                img_path = class_path / img_name
+#             for img_name in os.listdir(class_path):
+#                 img_path = class_path / img_name
 
-                if img_name.lower().endswith((".png", ".jpg", ".jpeg")):
-                    self.image_paths.append(img_path)
-                    self.labels.append(label)
+#                 if img_name.lower().endswith((".png", ".jpg", ".jpeg")):
+#                     self.image_paths.append(img_path)
+#                     self.labels.append(label)
 
-    def __len__(self):
-        return len(self.image_paths)
+#     def __len__(self):
+#         return len(self.image_paths)
 
-    def __getitem__(self, idx):
-        img = Image.open(self.image_paths[idx]).convert("RGB")
-        label = self.labels[idx]
+#     def __getitem__(self, idx):
+#         img = Image.open(self.image_paths[idx]).convert("RGB")
+#         label = self.labels[idx]
 
-        if self.transform:
-            img = self.transform(img)
+#         if self.transform:
+#             img = self.transform(img)
 
-        return img, label
+#         return img, label
 
 # -----------------------------
 # Device
