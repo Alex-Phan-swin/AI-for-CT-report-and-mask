@@ -3,8 +3,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from PIL import Image
+from torch.utils.data import DataLoader, random_split
 import torchvision.transforms as transforms
 import torchvision.models as models
 import matplotlib.pyplot as plt
@@ -12,6 +11,7 @@ from tqdm import tqdm
 from Loading_Dataset import LiverDataset
 from sklearn.metrics import precision_score, recall_score, f1_score
 import ssl
+
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # -----------------------------
@@ -51,9 +51,15 @@ if len(dataset.classes) < 2:
     raise SystemExit(1)
 
 # -----------------------------
-# DataLoader
+# Train / Validation split
 # -----------------------------
-train_loader = DataLoader(dataset, batch_size=16, shuffle=True)
+train_size = int(0.8 * len(dataset))
+val_size = len(dataset) - train_size
+
+train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 
 # -----------------------------
 # Model
@@ -72,27 +78,29 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 # -----------------------------
 # Training
 # -----------------------------
-num_epochs = 6
+num_epochs = 30
 
-train_accuracies = []
 train_losses = []
-train_precisions = []
-train_recalls = []
-train_f1s = []
+train_accuracies = []
+val_accuracies = []
+val_precisions = []
+val_recalls = []
+val_f1s = []
 
 for epoch in range(num_epochs):
+
+    # =====================
+    # TRAINING
+    # =====================
     model.train()
 
     running_loss = 0.0
     correct = 0
     total = 0
 
-    all_preds = []
-    all_labels = []
+    train_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs} [TRAIN]")
 
-    progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}")
-
-    for images, labels in progress_bar:
+    for images, labels in train_bar:
         images = images.to(device)
         labels = labels.to(device)
 
@@ -109,43 +117,70 @@ for epoch in range(num_epochs):
         correct += (predicted == labels).sum().item()
         total += labels.size(0)
 
-        # store for precision/recall/F1
-        all_preds.extend(predicted.cpu().numpy())
-        all_labels.extend(labels.cpu().numpy())
+        train_bar.set_postfix(loss=loss.item())
 
-        progress_bar.set_postfix(loss=loss.item())
-
-    # epoch metrics
-    accuracy = correct / total
-    precision = precision_score(all_labels, all_preds, average='weighted')
-    recall = recall_score(all_labels, all_preds, average='weighted')
-    f1 = f1_score(all_labels, all_preds, average='weighted')
-
-    train_accuracies.append(accuracy)
+    train_acc = correct / total
     train_losses.append(running_loss)
-    train_precisions.append(precision)
-    train_recalls.append(recall)
-    train_f1s.append(f1)
+    train_accuracies.append(train_acc)
 
+    # =====================
+    # VALIDATION
+    # =====================
+    model.eval()
+
+    all_preds = []
+    all_labels = []
+
+    with torch.no_grad():
+        val_bar = tqdm(val_loader, desc=f"Epoch {epoch+1}/{num_epochs} [VAL]")
+
+        for images, labels in val_bar:
+            images = images.to(device)
+            labels = labels.to(device)
+
+            outputs = model(images)
+            _, predicted = torch.max(outputs, 1)
+
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    val_acc = (sum([p == l for p, l in zip(all_preds, all_labels)]) / len(all_labels))
+    val_precision = precision_score(all_labels, all_preds, average='weighted')
+    val_recall = recall_score(all_labels, all_preds, average='weighted')
+    val_f1 = f1_score(all_labels, all_preds, average='weighted')
+
+    val_accuracies.append(val_acc)
+    val_precisions.append(val_precision)
+    val_recalls.append(val_recall)
+    val_f1s.append(val_f1)
+
+    # =====================
+    # PRINT RESULTS
+    # =====================
     print(f"""
 Epoch {epoch+1} Results:
-Loss: {running_loss:.4f}
-Accuracy: {accuracy:.4f}
-Precision: {precision:.4f}
-Recall: {recall:.4f}
-F1-score: {f1:.4f}
+------------------------
+Train Loss: {running_loss:.4f}
+Train Accuracy: {train_acc:.4f}
+
+VAL Accuracy: {val_acc:.4f}
+VAL Precision: {val_precision:.4f}
+VAL Recall: {val_recall:.4f}
+VAL F1-score: {val_f1:.4f}
 """)
 
+# -----------------------------
+# Plot metrics
+# -----------------------------
 epochs = range(1, num_epochs + 1)
 
-plt.plot(epochs, train_accuracies, label="Accuracy")
-plt.plot(epochs, train_precisions, label="Precision")
-plt.plot(epochs, train_recalls, label="Recall")
-plt.plot(epochs, train_f1s, label="F1-score")
+plt.plot(epochs, train_accuracies, label="Train Accuracy")
+plt.plot(epochs, val_accuracies, label="Val Accuracy")
+plt.plot(epochs, val_f1s, label="Val F1-score")
 
 plt.xlabel("Epoch")
 plt.ylabel("Score")
-plt.title("Training Metrics")
+plt.title("Training vs Validation Metrics")
 plt.legend()
 plt.show()
 
