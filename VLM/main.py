@@ -20,3 +20,18 @@ text_encoder = AutoModel.from_pretrained("microsoft/BiomedNLP-PubMedBERT-base-un
 for param in text_encoder.parameters():
     param.requires_grad = False
 
+
+#LLM report generation
+
+llm = AutoModelForCausalLM.from_pretrained("gpt2").to(device)
+
+for p in llm.parameters():
+    p.requires_grad = False
+
+#Diemensions, these will be used for the projection layers and the fusion module
+vision_dim = vision_features.shape[1]
+text_dim = text_encoder.config.hidden_size
+hidden_dim = 512
+llm_dim = llm.config.n_embd
+
+
