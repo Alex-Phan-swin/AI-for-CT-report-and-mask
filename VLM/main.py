@@ -54,3 +54,34 @@ def encode_text(text_list):
     
     #CLS token representation, summary of sentence
     return outputs.last_hidden_state[:, 0, :]
+
+#Fusion module
+def fuse(vision_emb, text_emb):
+    return vision_emb + text_emb
+
+
+# =========================
+# 8. FULL FORWARD PASS
+# =========================
+def forward(vision_feats, text_inputs):
+    
+    # ----- TEXT -----
+    text_emb = encode_text(text_inputs)     # [B, text_dim]
+    text_emb = text_proj(text_emb)          # [B, hidden]
+
+    # ----- VISION -----
+    vision_emb = vision_proj(vision_feats)   # [B, hidden]
+
+    # ----- FUSION -----
+    fused = fuse(vision_emb, text_emb)       # [B, hidden]
+
+    # ----- PROJECT TO LLM SPACE -----
+    llm_input = llm_proj(fused)              # [B, llm_dim]
+
+    # GPT expects sequence
+    llm_input = llm_input.unsqueeze(1)       # [B, 1, llm_dim]
+
+    # ----- GENERATE REPORT -----
+    outputs = llm(inputs_embeds=llm_input)
+
+    return outputs.logits
