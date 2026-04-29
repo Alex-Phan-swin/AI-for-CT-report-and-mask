@@ -35,3 +35,22 @@ hidden_dim = 512
 llm_dim = llm.config.n_embd
 
 
+#Projection layer
+image_projection = nn.Linear(vision_dim, hidden_dim).to(device)
+text_projection = nn.Linear(text_dim, hidden_dim).to(device)
+llm_projection = nn.Linear(llm_dim, hidden_dim).to(device)
+
+#Text encoder
+def encode_text(text_list):
+    inputs = tokenizer(
+        text_list,
+        padding=True,
+        truncation=True,
+        return_tensors="pt"
+    ).to(device)
+
+    with torch.no_grad():
+        outputs = text_encoder(**inputs)
+    
+    #CLS token representation, summary of sentence
+    return outputs.last_hidden_state[:, 0, :]
