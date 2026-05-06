@@ -1,93 +1,65 @@
 import torch
-from config import device, load_data
-from models import (
-    llm, llm_tokenizer,
-    get_dims, build_projections, fuse
+import os
+
+from config import load_data, device
+from models import build_model, get_dims, llm, llm_tokenizer
+
+vision_features, _ = load_data()
+
+vision_dim, _, llm_dim = get_dims(vision_features)
+
+model = build_model(vision_dim, 512, llm_dim)
+
+# =========================
+# LOAD FROM projection FOLDER
+# =========================
+model_path = os.path.join(
+    os.path.dirname(__file__),
+    "projection",
+    "vlm_model.pt"
 )
 
-vision_features, labels = load_data()
-
-# =========================
-# SETUP
-# =========================
-hidden_dim = 512
-vision_dim, text_dim, llm_dim = get_dims(vision_features)
-
-proj = build_projections(vision_dim, text_dim, hidden_dim, llm_dim)
-
-# =========================
-# PROMPT
-# =========================
-def build_prompt():
-    return "Clinical Impression: Liver CT scan shows "
+model.load_state_dict(torch.load(model_path, map_location=device))
+model.to(device)
 
 # =========================
 # GENERATION
 # =========================
-def generate_text(vision_feats, max_len=80):
+def generate(v):
 
-    vision_emb = proj["image_proj"](vision_feats)
+    v = v.to(device)
 
-    context = proj["context"].expand(vision_emb.shape[0], -1)
+    prefix = model(v).unsqueeze(1)
 
-    fused = fuse(vision_emb, context, proj["fusion_proj"])
-
-    vision_token = proj["llm_proj"](fused).unsqueeze(1)
-
-    prompt = build_prompt()
+    prompt = "Clinical Impression: "
     input_ids = llm_tokenizer(prompt, return_tensors="pt").input_ids.to(device)
 
-    prompt_embeds = llm.transformer.wte(input_ids)
+    prompt_emb = llm.transformer.wte(input_ids)
 
-    generated = torch.cat([vision_token, prompt_embeds], dim=1)
+    x = torch.cat([prefix, prompt_emb], dim=1)
 
-    output_tokens = []
+    out = []
 
-    for _ in range(max_len):
+    for _ in range(60):
         with torch.no_grad():
-            outputs = llm(inputs_embeds=generated)
-            logits = outputs.logits[:, -1, :]
+            logits = llm(inputs_embeds=x).logits[:, -1, :]
 
-            probs = torch.softmax(logits / 0.8, dim=-1)
+            probs = torch.softmax(logits / 1.0, dim=-1)
             next_token = torch.multinomial(probs, 1)
 
-            token_id = next_token.item()
-            output_tokens.append(token_id)
+            out.append(next_token.item())
 
-            if token_id == llm_tokenizer.eos_token_id:
-                break
+            x = torch.cat([x, llm.transformer.wte(next_token)], dim=1)
 
-            next_emb = llm.transformer.wte(next_token)
-            generated = torch.cat([generated, next_emb], dim=1)
-
-    return llm_tokenizer.decode(output_tokens, skip_special_tokens=True)
+    return llm_tokenizer.decode(out, skip_special_tokens=True)
 
 # =========================
 # RUN
 # =========================
 if __name__ == "__main__":
-    print("\n" + "="*70)
-    print("LIGHTWEIGHT VLM MEDICAL REPORT GENERATOR")
-    print("="*70)
 
-    num_reports = min(3, len(vision_features))
+    print("\n=== VLM INFERENCE ===\n")
 
-    for idx in range(num_reports):
-        print(f"\n[Report {idx+1}] Processing...")
-
-        try:
-            report = generate_text(
-                vision_features[idx:idx+1],
-                max_len=100
-            )
-
-            print("\n" + "─"*70)
-            print(f"CLINICAL IMPRESSION - Image {idx+1}")
-            print("─"*70)
-            print(report)
-            print("─"*70)
-
-        except Exception as e:
-            print(f"Error: {e}")
-
-    print("\nDone.")
+    for i in range(3):
+        print("\n--- REPORT ---")
+        print(generate(vision_features[i:i+1]))

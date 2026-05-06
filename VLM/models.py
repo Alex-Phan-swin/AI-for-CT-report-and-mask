@@ -1,69 +1,52 @@
 import torch
 import torch.nn as nn
-from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
+from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
 from config import device
 
-# =========================
+# -------------------------
 # TOKENIZERS
-# =========================
-text_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+# -------------------------
 llm_tokenizer = AutoTokenizer.from_pretrained("gpt2")
-
 llm_tokenizer.pad_token = llm_tokenizer.eos_token
 
-# =========================
+# -------------------------
 # MODELS
-# =========================
+# -------------------------
 text_encoder = AutoModel.from_pretrained("bert-base-uncased").to(device)
 llm = AutoModelForCausalLM.from_pretrained("gpt2").to(device)
 
-# Freeze models
 for p in text_encoder.parameters():
     p.requires_grad = False
 
 for p in llm.parameters():
     p.requires_grad = False
 
-# =========================
+# -------------------------
 # DIMENSIONS
-# =========================
+# -------------------------
 def get_dims(vision_features):
-    vision_dim = vision_features.shape[1]
-    text_dim = text_encoder.config.hidden_size
-    llm_dim = llm.config.n_embd
-    return vision_dim, text_dim, llm_dim
+    return vision_features.shape[1], 768, llm.config.n_embd
 
-# =========================
-# BUILD PROJECTIONS
-# =========================
-def build_projections(vision_dim, text_dim, hidden_dim, llm_dim):
-    return {
-        "image_proj": nn.Linear(vision_dim, hidden_dim).to(device),
-        "text_proj": nn.Linear(text_dim, hidden_dim).to(device),
-        "fusion_proj": nn.Linear(hidden_dim * 2, hidden_dim).to(device),
-        "llm_proj": nn.Linear(hidden_dim, llm_dim).to(device),
-        "context": nn.Parameter(torch.randn(1, hidden_dim)).to(device)
-    }
+# -------------------------
+# VLM MODULE
+# -------------------------
+class VLM(nn.Module):
+    def __init__(self, vision_dim, hidden_dim, llm_dim):
+        super().__init__()
 
-# =========================
-# TEXT ENCODING
-# =========================
-def encode_text(text_inputs):
-    inputs = text_tokenizer(
-        text_inputs,
-        padding=True,
-        truncation=True,
-        return_tensors="pt"
-    ).to(device)
+        self.image_proj = nn.Linear(vision_dim, hidden_dim)
+        self.context = nn.Parameter(torch.randn(1, hidden_dim))
 
-    with torch.no_grad():
-        outputs = text_encoder(**inputs)
+        self.to_llm = nn.Linear(hidden_dim, llm_dim)
 
-    return outputs.last_hidden_state[:, 0, :]
+    def forward(self, vision_feats):
+        vision_emb = self.image_proj(vision_feats)
 
-# =========================
-# FUSION
-# =========================
-def fuse(vision_emb, text_emb, fusion_layer):
-    fused = torch.cat([vision_emb, text_emb], dim=-1)
-    return fusion_layer(fused)
+        context = self.context.expand(vision_emb.size(0), -1)
+
+        fused = vision_emb + context  # SIMPLE + STABLE (important fix)
+
+        return self.to_llm(fused)
+
+def build_model(vision_dim, hidden_dim, llm_dim):
+    return VLM(vision_dim, hidden_dim, llm_dim).to(device)
