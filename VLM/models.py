@@ -1,52 +1,41 @@
 import torch
 import torch.nn as nn
-from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer
 from config import device
 
 # -------------------------
-# TOKENIZERS
+# TOKENIZER (ADD THIS)
 # -------------------------
-llm_tokenizer = AutoTokenizer.from_pretrained("gpt2")
-llm_tokenizer.pad_token = llm_tokenizer.eos_token
+text_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+
 
 # -------------------------
-# MODELS
+# TEXT ENCODER (frozen)
 # -------------------------
 text_encoder = AutoModel.from_pretrained("bert-base-uncased").to(device)
-llm = AutoModelForCausalLM.from_pretrained("gpt2").to(device)
+text_encoder.eval()
 
 for p in text_encoder.parameters():
     p.requires_grad = False
 
-for p in llm.parameters():
-    p.requires_grad = False
 
 # -------------------------
-# DIMENSIONS
+# CLIP STYLE MODEL
 # -------------------------
-def get_dims(vision_features):
-    return vision_features.shape[1], 768, llm.config.n_embd
-
-# -------------------------
-# VLM MODULE
-# -------------------------
-class VLM(nn.Module):
-    def __init__(self, vision_dim, hidden_dim, llm_dim):
+class CLIPVLM(nn.Module):
+    def __init__(self, vision_dim, text_dim, hidden_dim=512):
         super().__init__()
 
-        self.image_proj = nn.Linear(vision_dim, hidden_dim)
-        self.context = nn.Parameter(torch.randn(1, hidden_dim))
+        self.vision_proj = nn.Linear(vision_dim, hidden_dim)
+        self.text_proj = nn.Linear(text_dim, hidden_dim)
 
-        self.to_llm = nn.Linear(hidden_dim, llm_dim)
+        self.temperature = nn.Parameter(torch.tensor(0.07))
 
-    def forward(self, vision_feats):
-        vision_emb = self.image_proj(vision_feats)
+    def forward(self, vision_feats, text_embeds):
+        v = self.vision_proj(vision_feats)
+        t = self.text_proj(text_embeds)
 
-        context = self.context.expand(vision_emb.size(0), -1)
+        v = v / v.norm(dim=-1, keepdim=True)
+        t = t / t.norm(dim=-1, keepdim=True)
 
-        fused = vision_emb + context  # SIMPLE + STABLE (important fix)
-
-        return self.to_llm(fused)
-
-def build_model(vision_dim, hidden_dim, llm_dim):
-    return VLM(vision_dim, hidden_dim, llm_dim).to(device)
+        return v, t        

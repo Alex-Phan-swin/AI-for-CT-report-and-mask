@@ -1,65 +1,86 @@
 import torch
+from config import load_data, device
+from models import CLIPVLM, text_encoder, text_tokenizer
 import os
 
-from config import load_data, device
-from models import build_model, get_dims, llm, llm_tokenizer
+# =========================
+# DATA
+# =========================
+vision_features, labels = load_data()
 
-vision_features, _ = load_data()
+vision_dim = vision_features.shape[1]
+text_dim = text_encoder.config.hidden_size
 
-vision_dim, _, llm_dim = get_dims(vision_features)
-
-model = build_model(vision_dim, 512, llm_dim)
+# Define text bank for reports
+text_bank = [
+    "Healthy liver: Normal appearance with no signs of disease.",
+    "Hepatic Steatosis: Fatty infiltration of the liver detected, indicating steatosis."
+]
 
 # =========================
-# LOAD FROM projection FOLDER
+# MODEL PATH
 # =========================
 model_path = os.path.join(
     os.path.dirname(__file__),
     "projection",
-    "vlm_model.pt"
+    "clip_vlm.pt"
 )
 
+# =========================
+# MODEL LOAD (FIXED)
+# =========================
+model = CLIPVLM(vision_dim, text_dim).to(device)
 model.load_state_dict(torch.load(model_path, map_location=device))
-model.to(device)
+model.eval()
 
 # =========================
-# GENERATION
+# RETRIEVAL FUNCTION
 # =========================
-def generate(v):
+def retrieve_best_match(image_feat, text_bank):
 
-    v = v.to(device)
+    image_feat = image_feat.to(device)
 
-    prefix = model(v).unsqueeze(1)
+    with torch.no_grad():
 
-    prompt = "Clinical Impression: "
-    input_ids = llm_tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+        # image embedding
+        v = model.vision_proj(image_feat)
+        v = v / v.norm(dim=-1, keepdim=True)
 
-    prompt_emb = llm.transformer.wte(input_ids)
+        best_score = -float("inf")
+        best_text = None
 
-    x = torch.cat([prefix, prompt_emb], dim=1)
+        for t in text_bank:
 
-    out = []
+            # SUPPORT BOTH STRING OR TOKENIZED INPUT
+            if isinstance(t, str):
+                inputs = text_tokenizer(
+                    t,
+                    return_tensors="pt",
+                    padding=True,
+                    truncation=True
+                )
+                inputs = {k: v.to(device) for k, v in inputs.items()}
+            else:
+                inputs = {k: v.to(device) for k, v in t.items()}
 
-    for _ in range(60):
-        with torch.no_grad():
-            logits = llm(inputs_embeds=x).logits[:, -1, :]
+            outputs = text_encoder(**inputs)
+            t_emb = outputs.last_hidden_state[:, 0, :]
+            t_emb = model.text_proj(t_emb)
+            t_emb = t_emb / t_emb.norm(dim=-1, keepdim=True)
 
-            probs = torch.softmax(logits / 1.0, dim=-1)
-            next_token = torch.multinomial(probs, 1)
+            score = torch.matmul(v, t_emb.T).item()
 
-            out.append(next_token.item())
+            if score > best_score:
+                best_score = score
+                best_text = t
 
-            x = torch.cat([x, llm.transformer.wte(next_token)], dim=1)
-
-    return llm_tokenizer.decode(out, skip_special_tokens=True)
+    return best_text
 
 # =========================
 # RUN
 # =========================
 if __name__ == "__main__":
 
-    print("\n=== VLM INFERENCE ===\n")
-
-    for i in range(3):
-        print("\n--- REPORT ---")
-        print(generate(vision_features[i:i+1]))
+    for i in range(10):
+        print(f"\n--- MATCHED REPORT {i}---")
+        print(retrieve_best_match(vision_features[i:i+1], text_bank))
