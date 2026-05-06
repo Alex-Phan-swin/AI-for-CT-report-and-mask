@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer, pipeline
 from config import device
 
 # -------------------------
@@ -17,6 +17,26 @@ text_encoder.eval()
 
 for p in text_encoder.parameters():
     p.requires_grad = False
+
+
+# -------------------------
+# LLM FOR REPORT GENERATION
+# -------------------------
+# Using GPT-2 with medical fine-tuning capability
+try:
+    # Try to use Clinical model if available
+    report_generator = pipeline(
+        'text-generation',
+        model='emilyalsentzer/distilbert-base-uncased-finetuned-clinical-notes',
+        device=device.index if device.type == 'cuda' else -1,
+    )
+except Exception:
+    # Fallback to GPT-2 Medium
+    report_generator = pipeline(
+        'text-generation',
+        model='gpt2-medium',
+        device=device.index if device.type == 'cuda' else -1,
+    )
 
 
 # -------------------------
