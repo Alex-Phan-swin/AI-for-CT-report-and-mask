@@ -95,7 +95,8 @@ def main():
         steps.append({
             "cmd": [
                 sys.executable, str(src_dir / "analyse_demo_folder.py"),
-                "--input-dir", args.demo_dir
+                "--input-dir", args.demo_dir,
+                "--open"
             ],
             "desc": "Analyzing demo input folder"
         })
@@ -140,13 +141,13 @@ if __name__ == "__main__":
 
 # python run_pipeline.py --epochs 10 --batch-size 8 --data-dir dataset/archive/kaggle_3m
 
-#Skip options:
+# Skip options:
 
 # Training is skipped by default to save time. To include training, use:
-#python run_pipeline.py --train --epochs (Any Number) --batch-size (Any Number)
+# python run_pipeline.py --train --epochs (Any Number) --batch-size (Any Number)
 
 # Skip evaluation 
-#python run_pipeline.py --skip-evaluation
+# python run_pipeline.py --skip-evaluation
 
 # Skip demo analysis
-#python run_pipeline.py --skip-demo
+# python run_pipeline.py --skip-demo
