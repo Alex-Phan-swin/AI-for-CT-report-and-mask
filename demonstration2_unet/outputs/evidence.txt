@@ -1,0 +1,18 @@
+Structured Visual Evidence
+==========================
+
+Input image: demo_input\TCGA_CS_4941_19960909_11.tif
+Predicted mask: outputs\predicted_mask.png
+Overlay: outputs\overlay.png
+Evidence source: U-Net predicted segmentation mask
+
+Finding present: No
+Mask area: 2.30%
+Primary region: central region
+Bounding box: {'x_min': 88, 'y_min': 70, 'x_max': 141, 'y_max': 112}
+Mean mask probability: 0.6385
+
+Report constraints:
+- Only describe mask-derived findings.
+- Link the report to the visual overlay/mask.
+- Do not infer tumour type, grade, prognosis, or treatment.
