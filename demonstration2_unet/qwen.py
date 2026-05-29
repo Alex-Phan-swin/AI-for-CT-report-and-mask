@@ -49,6 +49,7 @@ class BrainCTReportGenerator:
     def generate_report(
         self,
         image_path,
+        evidence = None,
         max_new_tokens=128
     ):
 
@@ -120,17 +121,3 @@ class BrainCTReportGenerator:
         )
 
         return output_text[0]
-
-
-# =========================
-# Usage
-# =========================
-
-generator = BrainCTReportGenerator()
-
-report = generator.generate_report(
-    r"C:\Users\Alex\Music\project\COS40005-Computing-Technology-Project-A-H\demonstration2_unet\demo_input\TCGA_CS_4941_19960909_11.tif"
-)
-
-print("\nGenerated Report:\n")
-print(report)

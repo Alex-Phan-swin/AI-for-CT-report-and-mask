@@ -8,6 +8,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 from model import UNet
 
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from qwen import BrainCTReportGenerator
+
 
 def load_font(size, bold=False):
     """Cross-platform font loading that works on Windows, macOS, and Linux."""
@@ -370,10 +376,66 @@ def make_demo_panel(original, mask_image, overlay, report, evidence, output_path
     panel.save(output_path)
 
 
+# def main(args):
+#     # Load checkpoint with weights_only=True for security, then get metadata separately
+#     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
+#     # Load metadata separately (not secure but needed for image_size)
+#     checkpoint_meta = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
+#     image_size = int(checkpoint_meta.get("image_size", args.image_size))
+
+#     device = choose_device()
+#     model = UNet().to(device)
+#     model.load_state_dict(checkpoint["model_state_dict"])
+#     model.eval()
+
+#     original, resized, tensor = load_image(args.image, image_size)
+#     tensor = tensor.to(device)
+
+#     with torch.no_grad():
+#         logits = model(tensor)
+#         prob = torch.sigmoid(logits).squeeze().cpu().numpy()
+
+#     output_dir = Path(args.output_dir)
+#     output_dir.mkdir(parents=True, exist_ok=True)
+
+#     mask = (prob >= args.pixel_probability_threshold).astype(np.uint8)
+#     evidence = build_evidence(
+#         mask,
+#         prob,
+#         args.area_threshold,
+#         args.mean_probability_threshold,
+#         args.image,
+#         output_dir,
+#     )
+#     display_mask = mask if evidence["mask_derived_findings"]["finding_present"] else np.zeros_like(mask)
+
+#     original_output = output_dir / "original.png"
+#     mask_output = output_dir / "predicted_mask.png"
+#     overlay_output = output_dir / "overlay.png"
+#     evidence_json_output = output_dir / "evidence.json"
+#     evidence_text_output = output_dir / "evidence.txt"
+#     report_output = output_dir / "report.txt"
+#     panel_output = output_dir / "demo_panel.png"
+
+#     original.save(original_output)
+#     save_mask(display_mask, output_dir / "predicted_mask.png")
+#     overlay = make_overlay(resized, display_mask)
+#     overlay.save(overlay_output)
+
+#     evidence_json_output.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+#     evidence_text_output.write_text(evidence_text(evidence), encoding="utf-8")
+
+#     report = grounded_report(evidence)
+#     report_output.write_text(report, encoding="utf-8")
+#     make_demo_panel(resized, Image.fromarray(display_mask * 255), overlay, report, evidence, panel_output)
+
+#     print(f"Saved original, mask, overlay, evidence, report, and demo panel to {output_dir}")
+#     print(report)
+
+
 def main(args):
-    # Load checkpoint with weights_only=True for security, then get metadata separately
+    # Load checkpoint
     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
-    # Load metadata separately (not secure but needed for image_size)
     checkpoint_meta = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     image_size = int(checkpoint_meta.get("image_size", args.image_size))
 
@@ -382,9 +444,11 @@ def main(args):
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
 
+    # Load image
     original, resized, tensor = load_image(args.image, image_size)
     tensor = tensor.to(device)
 
+    # Inference
     with torch.no_grad():
         logits = model(tensor)
         prob = torch.sigmoid(logits).squeeze().cpu().numpy()
@@ -392,7 +456,10 @@ def main(args):
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Mask
     mask = (prob >= args.pixel_probability_threshold).astype(np.uint8)
+
+    # Evidence
     evidence = build_evidence(
         mask,
         prob,
@@ -401,8 +468,10 @@ def main(args):
         args.image,
         output_dir,
     )
+
     display_mask = mask if evidence["mask_derived_findings"]["finding_present"] else np.zeros_like(mask)
 
+    # Save artifacts
     original_output = output_dir / "original.png"
     mask_output = output_dir / "predicted_mask.png"
     overlay_output = output_dir / "overlay.png"
@@ -412,18 +481,38 @@ def main(args):
     panel_output = output_dir / "demo_panel.png"
 
     original.save(original_output)
-    save_mask(display_mask, output_dir / "predicted_mask.png")
+    save_mask(display_mask, mask_output)
     overlay = make_overlay(resized, display_mask)
     overlay.save(overlay_output)
 
     evidence_json_output.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
     evidence_text_output.write_text(evidence_text(evidence), encoding="utf-8")
 
-    report = grounded_report(evidence)
-    report_output.write_text(report, encoding="utf-8")
-    make_demo_panel(resized, Image.fromarray(display_mask * 255), overlay, report, evidence, panel_output)
+    # ================================
+    # 🔥 NEW: Qwen REPORT GENERATION
+    # ================================
 
-    print(f"Saved original, mask, overlay, evidence, report, and demo panel to {output_dir}")
+    report_generator = BrainCTReportGenerator()
+
+    report = report_generator.generate_report(
+        image_path=args.image,
+        evidence=evidence
+    )
+
+    report_output.write_text(report, encoding="utf-8")
+
+    # Demo panel (still uses same report text)
+    make_demo_panel(
+        resized,
+        Image.fromarray(display_mask * 255),
+        overlay,
+        report,
+        evidence,
+        panel_output
+    )
+
+    print(f"Saved outputs to {output_dir}")
+    print("\n=== GENERATED REPORT ===\n")
     print(report)
 
 

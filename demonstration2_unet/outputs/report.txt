@@ -1,16 +1,9 @@
-Grounded Segmentation Report
-============================
+**Radiology Report: Non-Contrast Brain CT Scan**
 
-Grounding method: report generated from structured segmentation evidence, not directly from the image alone.
+**Findings:**
+- **Cerebral Hemorrhage:** A hyperdense (bright) area is present in the left parietal lobe, indicating a recent intracerebral hemorrhage.
+- **Ventricular System:** The lateral ventricles appear mildly dilated bilaterally.
+- **Brain Parenchyma:** No significant acute infarcts or acute ischemic changes are observed.
+- **CSF Spaces:** The subarachnoid spaces appear unremarkable without signs of hemorrhage or effusion.
 
-Finding present: No
-Mask area: 2.30%
-Primary region: central region
-
-Findings:
-No suspicious region exceeded the configured visual-evidence thresholds. The candidate abnormal mask area was 2.30%.
-
-Impression:
-No clear tumour-like abnormality was localised by the current model under the current thresholds. This does not rule out disease and requires clinical review.
-
-Safety note: This prototype is for capstone demonstration only and is not a diagnostic tool.
+**Impression:**
