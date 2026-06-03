@@ -4,8 +4,8 @@ echo Starting UNet Brain Tumor Segmentation Pipeline (training skipped)...
 echo To include training, run: python run_pipeline.py --train
 echo.
 
-REM Change to the demonstration2_unet directory
-cd /d "%~dp0demonstration2_unet"
+REM Change to the main_pipeline directory
+cd /d "%~dp0main_pipeline"
 
 REM Run the pipeline
 python run_pipeline.py %*

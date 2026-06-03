@@ -16,10 +16,10 @@ Write-Host "Data directory: $DataDir" -ForegroundColor Cyan
 Write-Host "Demo directory: $DemoDir" -ForegroundColor Cyan
 Write-Host ""
 
-# Change to the demonstration2_unet directory
+# Change to the main_pipeline directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$demonstrationDir = Join-Path $scriptDir "demonstration2_unet"
-Set-Location $demonstrationDir
+$mainPipelineDir = Join-Path $scriptDir "main_pipeline"
+Set-Location $mainPipelineDir
 
 # Build arguments
 $args = @(

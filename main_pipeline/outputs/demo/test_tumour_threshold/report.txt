@@ -1,0 +1,16 @@
+Grounded Segmentation Report
+============================
+
+Grounding method: report generated from structured segmentation evidence, not directly from the image alone.
+
+Finding present: Yes
+Mask area: 2.21%
+Primary region: central region
+
+Findings:
+A suspicious region was identified in the highlighted segmentation output. The predicted mask occupies approximately 2.21% of the image area and is localised primarily in the central region. The mean probability inside the predicted mask is 0.88.
+
+Impression:
+The highlighted region is consistent with a possible tumour-like abnormality. This impression is grounded only in the predicted mask and overlay and requires clinical review.
+
+Safety note: This prototype is for capstone demonstration only and is not a diagnostic tool.
