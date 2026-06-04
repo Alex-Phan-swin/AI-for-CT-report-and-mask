@@ -1,0 +1,10 @@
+.DS_Store
+._*
+__pycache__/
+*.py[cod]
+
+# Generated demo outputs
+demonstration2_unet/outputs/
+
+# Local/full datasets should stay on the machine, not in git
+demonstration2_unet/dataset/
