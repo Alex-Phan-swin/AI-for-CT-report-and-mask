@@ -47,6 +47,26 @@ The retained dataset path for this local prototype is:
 dataset/archive/kaggle_3m
 ```
 
+## Run The Web Demo With Qwen
+
+From the `demonstration2_unet` folder, run:
+
+```bash
+MEDISCAN_USE_QWEN=1 python3 src/demo_web.py
+```
+
+Then open the local website shown in the terminal, usually:
+
+```text
+http://127.0.0.1:8765
+```
+
+This starts the upload webpage with Qwen enabled for report generation. U-Net still performs the segmentation first, then Qwen writes the report from the structured segmentation evidence. If Qwen is working, the report area shows:
+
+```text
+Report writer: Qwen
+```
+
 ## 1. Check Dataset Loading
 
 ```bash
