@@ -44,6 +44,12 @@ def main():
                        help="Skip evaluation step")
     parser.add_argument("--skip-demo", action="store_true",
                        help="Skip demo folder analysis")
+    parser.add_argument("--use-qwen", action="store_true",
+                       help="Use Qwen for report formatting (optional)")
+    parser.add_argument("--show-panel", action="store_true",
+                       help="Show demo panel (in addition to main deliverables)")
+    parser.add_argument("--open-folder", action="store_true",
+                       help="Open output folder after completion")
 
     args = parser.parse_args()
 
@@ -92,21 +98,33 @@ def main():
 
     # Step 4: Demo folder analysis (analyse_demo_folder.py) - skip if requested
     if not args.skip_demo:
+        demo_cmd = [
+            sys.executable, str(src_dir / "analyse_demo_folder.py"),
+            "--input-dir", args.demo_dir,
+        ]
+        # Add optional flags
+        if args.use_qwen:
+            demo_cmd.append("--use-qwen")
+        if args.show_panel:
+            demo_cmd.append("--show-panel")
+        if args.open_folder:
+            demo_cmd.append("--open-folder")
+        
         steps.append({
-            "cmd": [
-                sys.executable, str(src_dir / "analyse_demo_folder.py"),
-                "--input-dir", args.demo_dir,
-                "--open"
-            ],
-            "desc": "Analyzing demo input folder"
+            "cmd": demo_cmd,
+            "desc": "Analyzing demo input folder (colour-coded segmentation)"
         })
 
     # Run all steps
-    print("Starting UNet Brain Tumor Segmentation Pipeline")
+    print("\n" + "="*60)
+    print("UNet Brain Tumor Segmentation Pipeline")
+    print("="*60)
     print(f"Data directory: {args.data_dir}")
     print(f"Demo directory: {args.demo_dir}")
     print(f"Training: {'ENABLED' if args.train else 'SKIPPED (use --train to enable)'}")
+    print(f"Qwen formatting: {'ENABLED' if args.use_qwen else 'DISABLED'}")
     print(f"Total steps: {len(steps)}")
+    print("="*60)
 
     success_count = 0
     for step in steps:
@@ -120,34 +138,17 @@ def main():
     print(f"Pipeline completed: {success_count}/{len(steps)} steps successful")
 
     if success_count == len(steps):
-        print("✓ All pipeline steps completed successfully!")
+        print("\n✓ All pipeline steps completed successfully!")
+        print("\n📁 Outputs:")
+        print(f"   • Demo outputs: outputs/demo/")
+        print(f"   • Colour-coded overlay: outputs/demo/colour_coded_overlay.png")
+        print(f"   • Grounded report: outputs/demo/grounded_report.txt")
+        print(f"   • Colour legend: outputs/demo/colour_legend.png")
         if not args.train:
-            print("\nNote: Training was skipped. To train a new model, run with --train")
-        print("\nNext steps:")
-        print("1. Check outputs/demo/ for demo outputs and outputs/evaluation/ for metrics")
-        print("2. Check models/ for trained model checkpoints")
-        print("3. Use predict_report.py for individual image predictions:")
-        print("   python src/predict_report.py --checkpoint models/unet_brain_mri.pth --image path/to/image.tif")
+            print("\n💡 Note: Training was skipped. To train a new model, run with --train")
     else:
-        print("✗ Pipeline completed with errors. Check output above for details.")
+        print("\n✗ Pipeline completed with errors. Check output above for details.")
 
 
 if __name__ == "__main__":
     main()
-
-
-
-# Customization options:
-
-# python run_pipeline.py --epochs 10 --batch-size 8 --data-dir dataset/archive/kaggle_3m
-
-# Skip options:
-
-# Training is skipped by default to save time. To include training, use:
-# python run_pipeline.py --train --epochs (Any Number) --batch-size (Any Number)
-
-# Skip evaluation 
-# python run_pipeline.py --skip-evaluation
-
-# Skip demo analysis
-# python run_pipeline.py --skip-demo

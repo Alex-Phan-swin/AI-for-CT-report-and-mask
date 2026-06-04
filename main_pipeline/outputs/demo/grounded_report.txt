@@ -1,0 +1,71 @@
+======================================================================
+GROUNDED SEGMENTATION REPORT - COLOUR-CODED ANALYSIS
+======================================================================
+Image: TCGA_CS_4941_19960909_16.tif
+Analysis Date: 2026-06-04 18:32:21
+Segmentation Threshold: 0.15
+
+SUMMARY
+----------------------------------------------------------------------
+Total abnormal area: 4.21% of scan
+Number of isolated regions: 3
+
+COLOUR REFERENCE GUIDE
+----------------------------------------------------------------------
+Refer to the colour-coded overlay image for visual identification:
+  • RED region   = Primary tumour (largest area)
+  • GREEN region = Secondary tumour focus
+  • YELLOW region = Suspicious area
+  • ORANGE region = Small isolated region
+
+REGION-SPECIFIC FINDINGS (Traceable to Overlay)
+----------------------------------------------------------------------
+
+  REGION 1 - RED:
+    • Type: primary tumour region
+    • Size: 3.7% of total scan area
+    • Location: upper left quadrant
+    • Description: Main abnormal area
+    • Clinical Note: Small but appreciable lesion
+
+  REGION 2 - GREEN:
+    • Type: secondary tumour focus
+    • Size: 0.34% of total scan area
+    • Location: upper right quadrant
+    • Description: Additional smaller abnormal area, possibly a satellite lesion
+    • Clinical Note: Minimal change, clinical significance uncertain
+
+  REGION 3 - YELLOW:
+    • Type: suspicious region
+    • Size: 0.17% of total scan area
+    • Location: upper right quadrant
+    • Description: Small suspicious area requiring clinical correlation
+    • Clinical Note: Minimal change, clinical significance uncertain
+
+OBSERVATIONS
+----------------------------------------------------------------------
+  • The RED region (R1) measures 3.7% of the scan
+  • The GREEN region (R2) measures 0.34% of the scan
+  • The YELLOW region (R3) measures 0.17% of the scan
+
+  The regions are spatially separated, suggesting potential multifocal
+  involvement. The largest concentration of abnormal tissue is
+  in the upper left quadrant (RED region).
+
+IMPRESSION
+----------------------------------------------------------------------
+  A small abnormal focus is detected (4.21% of scan).
+  The RED region (R1) is the most prominent.
+  This finding may warrant follow-up imaging for characterization.
+
+VALIDATION & TRACEABILITY STATEMENT
+----------------------------------------------------------------------
+  ✓ All numerical values are derived directly from the segmentation mask
+  ✓ Each coloured region in this report corresponds to a visible region in the overlay
+  ✓ No diagnostic claims are made beyond what is measurable in the segmentation
+  ✓ This report contains no template text or unverified anatomical assertions
+  ✓ Total verifiable claims: 12
+
+======================================================================
+END OF REPORT
+======================================================================

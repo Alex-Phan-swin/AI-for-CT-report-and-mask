@@ -5,15 +5,22 @@ param(
     [int]$Epochs = 5,
     [int]$BatchSize = 4,
     [int]$ImageSize = 256,
-    [switch]$Train,  # Changed from SkipTraining
+    [switch]$Train,
     [switch]$SkipEvaluation,
-    [switch]$SkipDemo
+    [switch]$SkipDemo,
+    [switch]$UseQwen,
+    [switch]$ShowPanel,
+    [switch]$OpenFolder
 )
 
-Write-Host "Starting UNet Brain Tumor Segmentation Pipeline (training skipped by default)..." -ForegroundColor Green
-Write-Host "To include training, use -Train switch" -ForegroundColor Yellow
-Write-Host "Data directory: $DataDir" -ForegroundColor Cyan
-Write-Host "Demo directory: $DemoDir" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "=" * 60 -ForegroundColor Cyan
+Write-Host "UNET BRAIN TUMOR SEGMENTATION PIPELINE" -ForegroundColor White
+Write-Host "=" * 60 -ForegroundColor Cyan
+Write-Host "Training: $(if ($Train) { 'ENABLED' } else { 'SKIPPED' })" -ForegroundColor Yellow
+Write-Host "Qwen Formatting: $(if ($UseQwen) { 'ENABLED' } else { 'DISABLED' })" -ForegroundColor Yellow
+Write-Host "Demo Directory: $DemoDir" -ForegroundColor Gray
+Write-Host "=" * 60 -ForegroundColor Cyan
 Write-Host ""
 
 # Change to the main_pipeline directory
@@ -34,9 +41,14 @@ $args = @(
 if ($Train) { $args += "--train" }
 if ($SkipEvaluation) { $args += "--skip-evaluation" }
 if ($SkipDemo) { $args += "--skip-demo" }
+if ($UseQwen) { $args += "--use-qwen" }
+if ($ShowPanel) { $args += "--show-panel" }
+if ($OpenFolder) { $args += "--open-folder" }
 
 # Run the pipeline
 & python $args
 
 Write-Host ""
+Write-Host "=" * 60 -ForegroundColor Green
 Write-Host "Pipeline execution completed." -ForegroundColor Green
+Write-Host "=" * 60 -ForegroundColor Green
