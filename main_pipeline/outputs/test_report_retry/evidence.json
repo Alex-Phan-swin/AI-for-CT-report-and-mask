@@ -1,21 +1,21 @@
 {
-  "input_image": "demo_input\\TCGA_CS_4941_19960909_16.tif",
+  "input_image": "dataset/sorted_by_tumour_status/tumour/images/TCGA_CS_4941_19960909/TCGA_CS_4941_19960909_11.tif",
   "visual_evidence": {
-    "predicted_mask": "outputs\\demo\\predicted_mask.png",
-    "overlay": "outputs\\demo\\overlay.png",
+    "predicted_mask": "outputs\\test_report_retry\\predicted_mask.png",
+    "overlay": "outputs\\test_report_retry\\overlay.png",
     "source": "U-Net predicted segmentation mask"
   },
   "mask_derived_findings": {
     "finding_present": true,
-    "mask_area_percent": 3.54,
+    "mask_area_percent": 5.03,
     "primary_region": "upper-central region",
     "bounding_box_pixels": {
-      "x_min": 59,
-      "y_min": 36,
-      "x_max": 173,
-      "y_max": 119
+      "x_min": 70,
+      "y_min": 32,
+      "x_max": 221,
+      "y_max": 207
     },
-    "mean_mask_probability": 0.9219,
+    "mean_mask_probability": 0.9014,
     "area_threshold_percent": 1.0,
     "mean_probability_threshold": 0.8
   },

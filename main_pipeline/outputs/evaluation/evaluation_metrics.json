@@ -3,20 +3,20 @@
   "data_dir": "dataset/archive/kaggle_3m",
   "validation_samples": 785,
   "pixel_metrics": {
-    "dice": 0.268,
-    "iou": 0.1548,
-    "precision": 0.2377,
-    "recall": 0.3073,
-    "pixel_accuracy": 0.9827
+    "dice": 0.4786,
+    "iou": 0.3146,
+    "precision": 0.4202,
+    "recall": 0.5559,
+    "pixel_accuracy": 0.9875
   },
   "image_level_metrics": {
-    "accuracy": 0.6561,
-    "precision": 0.0,
-    "recall": 0.0,
-    "true_positive": 0,
-    "false_positive": 0,
-    "true_negative": 515,
-    "false_negative": 270
+    "accuracy": 0.7975,
+    "precision": 0.7489,
+    "recall": 0.6185,
+    "true_positive": 167,
+    "false_positive": 56,
+    "true_negative": 459,
+    "false_negative": 103
   },
   "decision_thresholds": {
     "pixel_probability_threshold": 0.5,

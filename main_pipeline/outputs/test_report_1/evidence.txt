@@ -1,16 +1,16 @@
 Structured Visual Evidence
 ==========================
 
-Input image: demo_input\TCGA_CS_4941_19960909_16.tif
-Predicted mask: outputs\demo\predicted_mask.png
-Overlay: outputs\demo\overlay.png
+Input image: dataset/sorted_by_tumour_status/tumour/images/TCGA_CS_4941_19960909/TCGA_CS_4941_19960909_11.tif
+Predicted mask: outputs\test_report_1\predicted_mask.png
+Overlay: outputs\test_report_1\overlay.png
 Evidence source: U-Net predicted segmentation mask
 
 Finding present: Yes
-Mask area: 3.54%
+Mask area: 5.03%
 Primary region: upper-central region
-Bounding box: {'x_min': 59, 'y_min': 36, 'x_max': 173, 'y_max': 119}
-Mean mask probability: 0.9219
+Bounding box: {'x_min': 70, 'y_min': 32, 'x_max': 221, 'y_max': 207}
+Mean mask probability: 0.9014
 
 Report constraints:
 - Only describe mask-derived findings.

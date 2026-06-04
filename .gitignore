@@ -97,3 +97,10 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# local model storage
+models/
+ai_models/
+huggingface_cache/
+*.incomplete
+*.tmp

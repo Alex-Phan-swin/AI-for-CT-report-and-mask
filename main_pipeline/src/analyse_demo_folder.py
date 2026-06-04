@@ -2,137 +2,152 @@ import argparse
 import os
 import subprocess
 import sys
+import random
+import platform
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp"}
 
 
+# =========================
+# FONT LOADER
+# =========================
 def load_font(size, bold=False):
-    """Cross-platform font loading that works on Windows, macOS, and Linux."""
-    font_names = []
-    if bold:
-        font_names = ["arialbd.ttf", "Arial Bold.ttf", "DejaVuSans-Bold.ttf"]
-    else:
-        font_names = ["arial.ttf", "Arial.ttf", "DejaVuSans.ttf"]
+    font_names = (
+        ["arialbd.ttf", "Arial Bold.ttf", "DejaVuSans-Bold.ttf"]
+        if bold
+        else ["arial.ttf", "Arial.ttf", "DejaVuSans.ttf"]
+    )
 
-    # Try to load each font in order
-    for font_name in font_names:
+    for name in font_names:
         try:
-            return ImageFont.truetype(font_name, size)
+            return ImageFont.truetype(name, size)
         except OSError:
             continue
 
-    # Fallback to default font if none of the above work
-    try:
-        return ImageFont.load_default()
-    except:
-        # Last resort - create a basic font
-        return ImageFont.load_default()
+    return ImageFont.load_default()
 
 
+# =========================
+# DEMO IMAGE FINDER
+# =========================
 def find_demo_image(input_dir):
     input_path = Path(input_dir)
-    images = sorted(
-        path
-        for path in input_path.iterdir()
-        if path.is_file()
-        and path.suffix.lower() in IMAGE_EXTENSIONS
-        and not path.stem.endswith("_mask")
-    )
+
+    images = [
+        p for p in input_path.iterdir()
+        if p.is_file()
+        and p.suffix.lower() in IMAGE_EXTENSIONS
+        and "_mask" not in p.stem
+    ]
 
     if not images:
-        raise RuntimeError(
-            f"No demo image found in {input_path}. "
-            "Add one .tif, .png, .jpg, .jpeg, or .bmp image."
-        )
-
-    if len(images) > 1:
-        names = "\n".join(f"- {path.name}" for path in images)
-        raise RuntimeError(
-            "More than one demo image found. Keep exactly one image in the demo folder:\n"
-            f"{names}"
-        )
+        raise RuntimeError(f"No demo images in {input_dir}")
 
     return images[0]
 
 
+# =========================
+# MASK MATCHING
+# =========================
 def find_matching_mask(image_path, mask_roots):
     expected_name = f"{image_path.stem}_mask{image_path.suffix}"
+
     for root in mask_roots:
         root_path = Path(root)
         if not root_path.exists():
             continue
-        matches = sorted(root_path.rglob(expected_name))
-        if matches:
-            return matches[0]
+
+        match = next(root_path.rglob(expected_name), None)
+        if match:
+            return match
+
     return None
 
 
+# =========================
+# OVERLAY
+# =========================
 def make_ground_truth_overlay(image, mask):
     base = image.convert("RGB")
+
     mask_array = (np.asarray(mask.convert("L")) > 0).astype(np.uint8)
-    red = Image.new("RGB", base.size, (255, 0, 0))
-    alpha = Image.fromarray((mask_array * 110).astype(np.uint8))
-    overlay = Image.composite(red, base, alpha)
+
+    red_layer = Image.new("RGB", base.size, (255, 0, 0))
+    alpha = Image.fromarray((mask_array * 120).astype(np.uint8))
+
+    overlay = Image.composite(red_layer, base, alpha)
 
     ys, xs = np.where(mask_array > 0)
-    if len(xs) > 0 and len(ys) > 0:
+    if len(xs) > 0:
         draw = ImageDraw.Draw(overlay)
         bbox = (int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max()))
-        draw.rectangle(bbox, outline=(255, 220, 0), width=3)
+        draw.rectangle(bbox, outline=(255, 215, 0), width=3)
 
     return overlay
 
 
+# =========================
+# PANEL
+# =========================
 def make_ground_truth_panel(image_path, mask_path, output_path):
-    image = Image.open(image_path).convert("L").resize((320, 320), Image.BILINEAR)
-    mask = Image.open(mask_path).convert("L").resize((320, 320), Image.NEAREST)
+    image = Image.open(image_path).convert("L").resize((320, 320))
+    mask = Image.open(mask_path).convert("L").resize((320, 320))
     overlay = make_ground_truth_overlay(image, mask)
 
-    tile_size = (320, 320)
-    margin = 28
-    gap = 24
-    title_height = 54
-    width = margin * 2 + tile_size[0] * 3 + gap * 2
-    height = margin * 2 + title_height + tile_size[1] + 34
-
-    panel = Image.new("RGB", (width, height), "white")
+    panel = Image.new("RGB", (1100, 450), "white")
     draw = ImageDraw.Draw(panel)
-    title_font = load_font(24, bold=True)
-    label_font = load_font(17, bold=True)
 
-    draw.text((margin, margin), "Dataset Label Preview", font=title_font, fill=(22, 28, 35))
-    draw.text(
-        (margin, margin + 32),
-        "MRI image with ground-truth segmentation mask from the labelled dataset",
-        font=load_font(15),
-        fill=(80, 87, 94),
-    )
+    title_font = load_font(22, bold=True)
+    label_font = load_font(16, bold=True)
 
-    x = margin
-    y = margin + title_height
+    draw.text((25, 20), "Ground Truth Visual Evidence", font=title_font, fill=(20, 20, 20))
+
     items = [
-        ("MRI Image", image.convert("RGB")),
-        ("Ground-Truth Mask", mask.convert("RGB")),
-        ("Ground-Truth Overlay", overlay),
+        ("Input Scan", image.convert("RGB")),
+        ("Segmentation Mask", mask.convert("RGB")),
+        ("Overlay", overlay),
     ]
 
-    for label, tile in items:
-        draw.text((x, y), label, font=label_font, fill=(22, 28, 35))
-        panel.paste(tile, (x, y + 28))
-        x += tile_size[0] + gap
+    x = 25
+    y = 80
+
+    for label, img in items:
+        draw.text((x, y - 25), label, font=label_font, fill=(40, 40, 40))
+        panel.paste(img, (x, y))
+        x += 350
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     panel.save(output_path)
 
 
+# =========================
+# AUTO OPEN FUNCTION
+# =========================
+def open_path(path: Path):
+    if not path.exists():
+        return
+
+    system = platform.system()
+
+    if system == "Windows":
+        os.startfile(str(path))
+    elif system == "Darwin":
+        subprocess.run(["open", str(path)])
+    else:
+        subprocess.run(["xdg-open", str(path)])
+
+
+# =========================
+# MAIN PIPELINE STEP
+# =========================
 def main(args):
-    image_path = find_demo_image(args.input_dir)
-    print(f"Analysing demo image: {image_path}")
+
+    demo_image = find_demo_image(args.input_dir)
+    print(f"Analysing demo image: {demo_image}")
 
     command = [
         sys.executable,
@@ -140,73 +155,78 @@ def main(args):
         "--checkpoint",
         args.checkpoint,
         "--image",
-        str(image_path),
+        str(demo_image),
         "--output-dir",
         args.output_dir,
     ]
 
-    subprocess.run(command, check=True)
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parent.parent)
 
-    mask_path = find_matching_mask(image_path, args.mask_roots)
-    if mask_path:
-        ground_truth_output = Path(args.output_dir) / "ground_truth_panel.png"
-        make_ground_truth_panel(image_path, mask_path, ground_truth_output)
-        print(f"Saved ground-truth comparison panel to {ground_truth_output}")
-    else:
-        print("No matching ground-truth mask found. Skipped ground_truth_panel.png.")
-
-    print("\nOne-command demo outputs:")
-    for name in [
-        "original.png",
-        "predicted_mask.png",
-        "overlay.png",
-        "evidence.json",
-        "evidence.txt",
-        "report.txt",
-        "demo_panel.png",
-        "ground_truth_panel.png",
-    ]:
-        path = Path(args.output_dir) / name
-        if path.exists():
-            print(f"- {path}")
-
-    if args.open:
-        panel_path = Path(args.output_dir) / args.open_file
-        if not panel_path.exists():
-            raise RuntimeError(f"Cannot open missing output file: {panel_path}")
-        if sys.platform == "darwin":
-            subprocess.run(["open", str(panel_path)], check=True)
-        elif os.name == "nt":
-            os.startfile(panel_path)
-        else:
-            subprocess.run(["xdg-open", str(panel_path)], check=True)
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--input-dir", default="demo_input")
-    parser.add_argument("--checkpoint", default="models/unet_brain_mri.pth")
-    parser.add_argument("--output-dir", default="outputs/demo")
-    parser.add_argument(
-        "--mask-roots",
-        nargs="*",
-        default=[
-            "dataset/sorted_by_tumour_status/tumour/masks",
-            "dataset/sorted_by_tumour_status/non_tumour/masks",
-            "dataset/archive/kaggle_3m",
-        ],
+    subprocess.run(
+        command,
+        check=True,
+        cwd=Path(__file__).resolve().parent.parent,
+        env=env
     )
-    parser.add_argument(
+
+    output_dir = Path(args.output_dir)
+
+    # =========================
+    # Ground truth panel
+    # =========================
+    mask = find_matching_mask(demo_image, args.mask_roots)
+
+    panel_path = None
+    if mask:
+        panel_path = output_dir / "ground_truth_panel.png"
+        make_ground_truth_panel(demo_image, mask, panel_path)
+        print(f"Saved: {panel_path}")
+
+    # =========================
+    # REPORT PATH
+    # =========================
+    report_path = output_dir / "report.txt"
+
+    print("\nOutputs:")
+    for f in output_dir.glob("*"):
+        print("-", f)
+
+    # =========================
+    # AUTO OPEN EVERYTHING
+    # =========================
+    print("\nOpening outputs...")
+
+    open_path(report_path)
+
+    if panel_path:
+        open_path(panel_path)
+
+    open_path(output_dir)
+
+
+# =========================
+# ARGS
+# =========================
+def parse_args():
+    p = argparse.ArgumentParser()
+
+    p.add_argument("--input-dir", default="demo_input")
+    p.add_argument("--checkpoint", default="models/unet_brain_mri.pth")
+    p.add_argument("--output-dir", default="outputs/demo")
+
+    p.add_argument("--mask-roots", nargs="*", default=[
+        "dataset/sorted_by_tumour_status/tumour/masks",
+        "dataset/sorted_by_tumour_status/non_tumour/masks",
+        "dataset/archive/kaggle_3m",
+    ])
+    p.add_argument(
         "--open",
         action="store_true",
-        help="Open the generated demo image after analysis.",
-    )
-    parser.add_argument(
-        "--open-file",
-        default="demo_panel.png",
-        help="Output file to open when --open is used.",
-    )
-    return parser.parse_args()
+        help="Pipeline compatibility flag (ignored, auto-opens outputs anyway)"
+)
+
+    return p.parse_args()
 
 
 if __name__ == "__main__":
