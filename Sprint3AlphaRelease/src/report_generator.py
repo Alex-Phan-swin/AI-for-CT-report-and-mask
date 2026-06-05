@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from pathlib import Path
 
 
@@ -276,7 +277,27 @@ Colour-coded evidence regions:
 Baseline deterministic report to preserve factual content:
 {draft_report}
 
-Write the final report in plain English. Keep all claims traceable to the mask, overlay, heatmap, or colour-coded evidence regions."""
+Write the final report in plain English. Keep all claims traceable to the mask, overlay, heatmap, or colour-coded evidence regions.
+
+Formatting rules:
+- Do not use Markdown.
+- Do not use # heading markers.
+- Do not use **bold** or asterisks.
+- Use plain section headings like "Grounding method" and short readable paragraphs."""
+
+
+def clean_report_formatting(report):
+    cleaned_lines = []
+    for line in report.splitlines():
+        line = re.sub(r"^\s{0,3}#{1,6}\s*", "", line)
+        line = line.replace("**", "")
+        line = line.replace("__", "")
+        line = re.sub(r"^\s*[-*]\s+", "- ", line)
+        cleaned_lines.append(line.rstrip())
+
+    cleaned = "\n".join(cleaned_lines)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned + "\n"
 
 
 def generate_qwen_report(evidence, draft_report):
@@ -324,7 +345,9 @@ def generate_qwen_report(evidence, draft_report):
         top_p=None,
     )
     generated_ids = outputs[:, inputs.input_ids.shape[1] :]
-    return tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
+    return clean_report_formatting(
+        tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    ).strip()
 
 
 def validate_report(report, supported_claims, sentence_evidence_map):
@@ -379,7 +402,7 @@ def write_report_outputs(evidence, output_dir):
             qwen_report = generate_qwen_report(evidence, report)
             qwen_validation = validate_report(qwen_report, supported_claims, sentence_evidence_map)
             if qwen_validation["is_valid"]:
-                report = qwen_report
+                report = clean_report_formatting(qwen_report)
             else:
                 qwen_error = (
                     "Qwen output was rejected by validation; deterministic report was used."

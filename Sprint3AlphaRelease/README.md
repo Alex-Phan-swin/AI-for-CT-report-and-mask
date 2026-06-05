@@ -1,8 +1,8 @@
-# Demonstration 2: U-Net Medical Image Segmentation Prototype
+# Sprint 3 Alpha Release: Medical AI Segmentation And Grounded Reporting
 
-This prototype moves beyond the Sprint 1 classifier by producing pixel-level localisation of suspicious tumour regions and generating a simple report grounded in the predicted mask.
+This alpha release moves beyond the earlier image-level classifier by producing pixel-level localisation of suspicious tumour regions and generating a grounded report from the predicted mask, colour-coded visual evidence, and optional Qwen report generation.
 
-## Demo Pipeline
+## Sprint 3 Pipeline
 
 ```text
 MRI image
@@ -20,7 +20,7 @@ Recommended dataset: LGG Brain MRI Segmentation from Kaggle.
 Place the downloaded/extracted dataset under:
 
 ```text
-demonstration2_unet/dataset/
+Sprint3AlphaRelease/dataset/
 ```
 
 The loader expects image files with matching mask files named like:
@@ -35,7 +35,7 @@ This matches the common LGG/Kaggle structure.
 ## Setup
 
 ```bash
-cd demonstration2_unet
+cd Sprint3AlphaRelease
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -49,7 +49,7 @@ dataset/archive/kaggle_3m
 
 ## Run The Web Demo With Qwen
 
-From the `demonstration2_unet` folder, run:
+From the `Sprint3AlphaRelease` folder, run:
 
 ```bash
 MEDISCAN_USE_QWEN=1 python3 src/demo_web.py
@@ -145,10 +145,12 @@ This writes segmentation and image-level metrics to:
 outputs/evaluation_metrics.json
 ```
 
-## Demo Framing
+## Sprint 3 Framing
 
-Sprint 1 classified scans at image level. Demonstration 2 performs segmentation, producing visual evidence that grounds the generated report. The report is constrained by measurable mask outputs such as abnormality presence, approximate mask area, and image region.
+Sprint 1 classified scans at image level. Sprint 3 performs segmentation, producing visual evidence that grounds the generated report. The report is constrained by measurable mask outputs such as abnormality presence, approximate mask area, colour-coded evidence regions, and image location.
 
-See `DEMO_NOTES.md` for the client-aligned explanation, limitations, and next steps.
-See `EVALUATION_SUMMARY.md` for the latest validation metrics and how to explain them.
-See `CLIENT_RESEARCH_ALIGNMENT.md` and `DEMONSTRATION_SCRIPT.md` for the client-paper mapping and suggested demo structure.
+The current Sprint 3 alpha flow is:
+
+```text
+MRI upload -> U-Net segmentation -> colour-coded overlay -> Qwen grounded report -> validation
+```

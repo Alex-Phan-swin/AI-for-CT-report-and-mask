@@ -400,9 +400,18 @@ APP_HTML = """<!doctype html>
       border: 1px solid #eadfe0;
       background: #fffaf0;
       white-space: pre-wrap;
+      line-height: 1.45;
+    }
+
+    .report-box {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      color: #2f2223;
+    }
+
+    .validation-box {
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
-      line-height: 1.45;
     }
 
     .region-table {
