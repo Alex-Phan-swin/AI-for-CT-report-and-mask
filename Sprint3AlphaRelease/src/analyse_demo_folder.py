@@ -79,8 +79,42 @@ def make_ground_truth_panel(image_path, mask_path, output_path):
 
     panel = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(panel)
-    title_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 24)
-    label_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 17)
+
+    # #Fonts for mac
+    # # title_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 24)
+    # # label_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 17)
+
+    # #Fonts for windows
+    # try:
+    #     title_font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 24)
+    #     label_font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 17)
+    # except Exception as e:
+    #     print(f'Error loading fonts: {e}, if on mac switch to mac font')
+
+
+        # Try Windows fonts first, then fall back to Mac fonts
+    try:
+        title_font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 24)
+        label_font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 17)
+        body_font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 14)
+        small_font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 13)
+
+    except OSError:
+        print("Windows fonts not found. Trying Mac fonts...")
+
+        title_font = ImageFont.truetype(
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf", 24
+        )
+        label_font = ImageFont.truetype(
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf", 17
+        )
+        body_font = ImageFont.truetype(
+            "/System/Library/Fonts/Supplemental/Arial.ttf", 14
+        )
+        small_font = ImageFont.truetype(
+            "/System/Library/Fonts/Supplemental/Arial.ttf", 13
+        )
+
 
     draw.text((margin, margin), "Dataset Label Preview", font=title_font, fill=(22, 28, 35))
     draw.text(

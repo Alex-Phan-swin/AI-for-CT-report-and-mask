@@ -391,10 +391,41 @@ def make_demo_panel(original, mask_image, overlay, report, evidence, output_path
 
     panel = Image.new("RGB", (panel_width, panel_height), "white")
     draw = ImageDraw.Draw(panel)
-    title_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 24)
-    label_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 17)
-    body_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 14)
-    small_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 13)
+
+    # #mac fonts
+    # # title_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 24)
+    # # label_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 17)
+    # # body_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 14)
+    # # small_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 13)
+    
+    # #window
+    # title_font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 24)
+    # label_font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 17)
+    # body_font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 14)
+    # small_font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 13)
+
+    # Try Windows fonts first, then fall back to Mac fonts
+    try:
+        title_font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 24)
+        label_font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 17)
+        body_font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 14)
+        small_font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 13)
+
+    except OSError:
+        print("Windows fonts not found. Trying Mac fonts...")
+
+        title_font = ImageFont.truetype(
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf", 24
+        )
+        label_font = ImageFont.truetype(
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf", 17
+        )
+        body_font = ImageFont.truetype(
+            "/System/Library/Fonts/Supplemental/Arial.ttf", 14
+        )
+        small_font = ImageFont.truetype(
+            "/System/Library/Fonts/Supplemental/Arial.ttf", 13
+        )
 
     draw.text((margin, margin), "Visual-Grounded Medical Imaging Prototype", font=title_font, fill=(22, 28, 35))
     draw.text(
