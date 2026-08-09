@@ -3,7 +3,6 @@ import os
 import re
 from pathlib import Path
 
-
 PROHIBITED_CLAIMS = [
     "tumour type",
     "tumour grade",
@@ -251,39 +250,29 @@ def build_qwen_prompt(evidence, draft_report):
         else "- No colour-coded evidence region exceeded the evidence thresholds."
     )
 
-    return f"""You are writing a concise medical imaging prototype report.
+    return f"""You are writing a concise medical imaging prototype report grounded in segmentation evidence.
 
-Use ONLY the structured segmentation evidence below. Do not infer tumour type, tumour grade, prognosis, malignancy, treatment, or diagnosis. Mention that this is a prototype and requires clinical review.
+                Use ONLY the structured segmentation evidence below. Do not infer tumour type, tumour grade, prognosis, malignancy, treatment, or diagnosis. Mention that this is a prototype and requires clinical review.
 
-Required report sections:
-1. Grounding method
-2. Visual evidence
-3. Findings
-4. Impression
-5. Safety note
+                Report structure to follow:
 
-Structured evidence:
-- Finding present: {"Yes" if findings["finding_present"] else "No"}
-- Mask area: {findings["mask_area_percent"]:.2f}%
-- Primary region: {findings["primary_region"]}
-- Mean mask probability: {findings["mean_mask_probability"]:.2f}
-- Predicted mask file: {evidence["visual_evidence"]["predicted_mask"]}
-- Overlay file: {evidence["visual_evidence"]["overlay"]}
-- Probability heatmap file: {evidence["visual_evidence"]["probability_heatmap"]}
+                1. Opening summary: Write 3 lines in detail describing what the AI model identified based on the {findings}, mentioning key regions affected and their locations.
 
-Colour-coded evidence regions:
-{region_summary}
+                2. Detailed Regional Impact section: For each colour-coded evidence region, provide a numbered point (1, 2, 3, etc.) that includes:
+                    Write 3 lines describing
+                - The region ID and colour
+                - The percentage of that region affected
+                - The functional/anatomical significance of that region
+                - Potential impact on brain function or patient presentation
 
-Baseline deterministic report to preserve factual content:
-{draft_report}
+                3. Clinical Implications section: Provide numbered points describing:
+                    Write 3 lines describing
+                - How the lesion locations may affect cognitive and motor functions
+                - Specific functional impacts based on the regions identified
+                - The need for clinical correlation
 
-Write the final report in plain English. Keep all claims traceable to the mask, overlay, heatmap, or colour-coded evidence regions.
-
-Formatting rules:
-- Do not use Markdown.
-- Do not use # heading markers.
-- Do not use **bold** or asterisks.
-- Use plain section headings like "Grounding method" and short readable paragraphs."""
+                4. Include {findings}, {region_summary}, and any other relevant structured evidence in the report.
+                """
 
 
 def clean_report_formatting(report):
@@ -398,6 +387,7 @@ def write_report_outputs(evidence, output_dir):
     report, supported_claims, sentence_evidence_map = generate_report(evidence)
     qwen_error = None
     if qwen_enabled():
+    #if True:
         try:
             qwen_report = generate_qwen_report(evidence, report)
             qwen_validation = validate_report(qwen_report, supported_claims, sentence_evidence_map)
@@ -408,6 +398,7 @@ def write_report_outputs(evidence, output_dir):
                     "Qwen output was rejected by validation; deterministic report was used."
                 )
         except Exception as exc:
+            print('qwen fail')
             qwen_error = f"Qwen unavailable; deterministic report was used. Reason: {exc}"
 
     validation = validate_report(report, supported_claims, sentence_evidence_map)

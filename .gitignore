@@ -8,3 +8,7 @@ Sprint3AlphaRelease/outputs/
 
 # Local/full datasets should stay on the machine, not in git
 Sprint3AlphaRelease/dataset/
+
+.venv/
+
+Sprint3AlphaRelease/test_output/
